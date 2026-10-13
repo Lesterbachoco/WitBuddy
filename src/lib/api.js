@@ -4,7 +4,7 @@ import { fallbackAnswer } from '../../shared/fallback.js';
  * Send the conversation to /api/chat.
  * If the server is unreachable (or errors), answer locally from the knowledge base.
  */
-export async function sendChat(history, completed) {
+export async function sendChat(history, completed, lastStep = 0) {
   const messages = history
     .filter((m) => m.id !== 'welcome')
     .map(({ role, content }) => ({ role, content }));
@@ -13,7 +13,7 @@ export async function sendChat(history, completed) {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, completed }),
+      body: JSON.stringify({ messages, completed, lastStep }),
     });
     if (res.status === 429) {
       return { answer: 'You are sending messages quickly. Please wait a minute and try again.', official: false, source: 'error' };
@@ -22,6 +22,6 @@ export async function sendChat(history, completed) {
     return await res.json();
   } catch {
     const last = messages[messages.length - 1]?.content ?? '';
-    return { ...fallbackAnswer(last, completed), source: 'offline' };
+    return { ...fallbackAnswer(last, completed, lastStep), source: 'offline' };
   }
 }
