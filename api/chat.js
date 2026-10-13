@@ -48,8 +48,7 @@ RULES
 Respond with JSON only: {"answer": "<markdown>", "type": "official" | "verify" | "general"}`;
 }
 
-async function callGemini(system, messages) {
-  const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+async function callGeminiModel(model, system, messages) {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -63,16 +62,35 @@ async function callGemini(system, messages) {
         })),
         generationConfig: {
           temperature: 0.3,
-          maxOutputTokens: 700,
+          maxOutputTokens: 1500,
           responseMimeType: 'application/json',
-          thinkingConfig: { thinkingBudget: 0 }, // keep replies fast and cheap
+          // Only the 2.5 family accepts a zero thinking budget; newer models manage it themselves
+          ...(model.startsWith('gemini-2.5') ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
         },
       }),
     },
   );
-  if (!res.ok) throw new Error(`Gemini ${res.status}`);
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = await res.json();
   return data.candidates?.[0]?.content?.parts?.[0]?.text;
+}
+
+/**
+ * Tries the configured model first, then backups. Google retires models often
+ * (gemini-2.5-flash shuts down 16 Oct 2026), so a 404 or quota error moves on to the next one.
+ */
+async function callGemini(system, messages) {
+  const models = [...new Set([process.env.GEMINI_MODEL || 'gemini-3.5-flash', 'gemini-3.5-flash', 'gemini-3.1-flash-lite'])];
+  let lastError;
+  for (const model of models) {
+    try {
+      return await callGeminiModel(model, system, messages);
+    } catch (err) {
+      lastError = new Error(`[${model}] ${err.message}`);
+      console.error('Gemini model failed:', lastError.message);
+    }
+  }
+  throw lastError;
 }
 
 async function callGroq(system, messages) {
@@ -87,7 +105,7 @@ async function callGroq(system, messages) {
       messages: [{ role: 'system', content: system }, ...messages],
     }),
   });
-  if (!res.ok) throw new Error(`Groq ${res.status}`);
+  if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const data = await res.json();
   return data.choices?.[0]?.message?.content;
 }
@@ -133,6 +151,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('Chat fallback:', err.message);
-    return res.status(200).json({ ...fallbackAnswer(last.content, completed, lastStep), source: 'fallback' });
+    return res.status(200).json({ ...fallbackAnswer(last.content, completed, lastStep), source: 'fallback', reason: String(err.message).slice(0, 300) }); // reason holds no secrets
   }
 }
