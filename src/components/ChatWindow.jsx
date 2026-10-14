@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Check, Info, Send, ShieldCheck, TriangleAlert, WifiOff } from 'lucide-react';
-import { OFFICES, VERIFY_AT } from '../../shared/clearanceData.js';
+import { Info, Send, ShieldCheck, TriangleAlert, WifiOff } from 'lucide-react';
+import { VERIFY_AT } from '../../shared/clearanceData.js';
 
 
 /** Trust badge shown under assistant answers. */
@@ -30,27 +30,19 @@ function TrustBadge({ official, general, source }) {
   );
 }
 
-function Bubble({ m, completed, onMarkCleared }) {
+function Bubble({ m }) {
   const isUser = m.role === 'user';
   return (
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`max-w-[88%] rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed sm:max-w-[75%] ${isUser ? 'rounded-br-sm bg-ink text-white' : 'rounded-bl-sm border border-line bg-white'}`}>
         {isUser ? <p>{m.content}</p> : <div className="md"><ReactMarkdown>{m.content}</ReactMarkdown></div>}
-        {m.step && (
-          <button
-            onClick={() => onMarkCleared(m.step)}
-            className={`mt-2 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold ${completed.includes(m.step) ? 'bg-emerald-100 text-stamp' : 'bg-stamp text-white'}`}
-          >
-            <Check size={15} aria-hidden /> {completed.includes(m.step) ? 'Cleared (tap to undo)' : 'Mark as cleared'}
-          </button>
-        )}
         {!isUser && m.id !== 'welcome' && m.official !== undefined && <TrustBadge official={m.official} general={m.general} source={m.source} />}
       </div>
     </div>
   );
 }
 
-export default function ChatWindow({ messages, loading, onSend, onNext, completed, onMarkCleared }) {
+export default function ChatWindow({ messages, loading, onSend }) {
   const [input, setInput] = useState('');
   const endRef = useRef(null);
 
@@ -67,7 +59,7 @@ export default function ChatWindow({ messages, loading, onSend, onNext, complete
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 space-y-3 overflow-y-auto p-4" role="log" aria-live="polite">
-        {messages.map((m) => <Bubble key={m.id} m={m} completed={completed} onMarkCleared={onMarkCleared} />)}
+        {messages.map((m) => <Bubble key={m.id} m={m} />)}
         {loading && (
           <div className="flex justify-start" aria-label="WitBuddy is typing">
             <div className="flex gap-1 rounded-2xl rounded-bl-sm border border-line bg-white px-4 py-3">
@@ -80,23 +72,10 @@ export default function ChatWindow({ messages, loading, onSend, onNext, complete
         <div ref={endRef} />
       </div>
 
-      {/* Quick actions */}
-      <div className="flex gap-2 overflow-x-auto border-t border-line bg-white px-3 py-2">
-        <button onClick={onNext} className="shrink-0 rounded-full bg-next px-3 py-1.5 text-sm font-semibold">Next office</button>
-        <button onClick={() => submit('What are the campus and office hours?')} className="shrink-0 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-mist">Hours</button>
-        <button onClick={() => submit('What if I have an INC or missing grades?')} className="shrink-0 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-mist">INC / grades</button>
-        {OFFICES.map((o) => (
-          <button key={o.step} onClick={() => submit(`Tell me about the ${o.office}`)}
-            className="shrink-0 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-mist">
-            {o.shortName ?? o.office}
-          </button>
-        ))}
-      </div>
-
       <form onSubmit={(e) => { e.preventDefault(); submit(input); }} className="flex gap-2 border-t border-line bg-white p-3">
         <input
           value={input} onChange={(e) => setInput(e.target.value)} maxLength={500}
-          placeholder="Ask me anything…" aria-label="Your question"
+          placeholder="Ask me anything about school…" aria-label="Your question"
           className="min-w-0 flex-1 rounded-full border border-line bg-mist px-4 py-2.5 text-[15px]"
         />
         <button type="submit" disabled={!input.trim() || loading} aria-label="Send"

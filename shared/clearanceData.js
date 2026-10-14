@@ -13,7 +13,7 @@ export const OFFICES = [
     step: 1,
     office: 'Librarian',
     shortName: 'Librarian',
-    location: null,
+    location: 'RTS Marine Building',
     requirements: [],
     notes: '',
     keywords: ['librarian', 'library', 'book', 'books', 'fine', 'fines', 'overdue'],
@@ -22,7 +22,7 @@ export const OFFICES = [
     step: 2,
     office: 'Chem Lab Custodian',
     shortName: 'Chem Lab',
-    location: null,
+    location: 'Main Building - 1st Floor',
     requirements: [],
     notes: '',
     keywords: ['chem', 'chemistry', 'lab', 'laboratory', 'custodian'],
@@ -31,7 +31,7 @@ export const OFFICES = [
     step: 3,
     office: 'Supply Inventory Officer',
     shortName: 'Supply',
-    location: null,
+    location: 'Main Building - 1st Floor',
     requirements: [],
     notes: '',
     keywords: ['supply', 'supplies', 'inventory', 'equipment'],
@@ -40,18 +40,32 @@ export const OFFICES = [
     step: 4,
     office: 'Department Head',
     shortName: 'Dept. Head',
-    location: null,
+    location: 'Depends on your program',
+    byProgram: true, // see DEPT_HEADS below
     requirements: [],
     notes: '',
     keywords: ['department head', 'dept head', 'department', 'dept', 'head', 'chair', 'chairperson'],
   },
 ];
 
+// Department Head location depends on the student's program.
+// Order matters for the offline matcher: more specific programs come first.
+export const DEPT_HEADS = [
+  { program: 'Marine Engineering', location: 'Marine Building - 1st Floor', keywords: ['marine engineering', 'marine eng', 'marine'] },
+  { program: 'Engineering', location: 'Engineering Building - 1st Floor', keywords: ['engineering', 'engineer', 'engg'] },
+  { program: 'IT (Information Technology)', location: 'RTS IT Building - 3rd Floor', keywords: ['information technology', 'bsit', 'it program'] },
+  { program: 'HM (Hospitality Management)', location: 'Main Building - 3rd Floor', keywords: ['hm', 'hrm', 'hospitality'] },
+  { program: 'Accountancy', location: 'Main Building - 3rd Floor', keywords: ['accountancy', 'accounting', 'bsa'] },
+  { program: 'Biochemistry', location: 'Main Building - 3rd Floor', keywords: ['biochem', 'biochemistry'] },
+  { program: 'AB English Language', location: 'Main Building - 3rd Floor', keywords: ['english'] },
+  { program: 'AB Political Science', location: 'Main Building - 3rd Floor', keywords: ['political science', 'polsci', 'political'] },
+];
+
 // Campuses and hours
 export const CAMPUSES = {
   sites: ['RTS Campus', 'Main Campus'],
   campusHours: '6:30 AM - 10:00 PM (both campuses)',
-  officeHours: '9:00 AM - 12:00 NN',
+  officeHours: '9:00 AM - 12:00 PM and 1:00 PM - 4:00 PM',
   officeHoursApplyTo: 'all offices, including the Registrar and the Accounting Office',
 };
 
@@ -84,7 +98,7 @@ export const FAQS = [
     answer: 'A Good Moral Certificate is normally requested through the student affairs or guidance office. Ask them about the form and processing time.',
     keywords: ['good moral', 'moral'] },
   { topic: 'Tuition and payments', confirmed: false,
-    answer: 'Tuition and fees are paid at the Accounting Office during office hours (9:00 AM - 12:00 NN). Keep your official receipts.',
+    answer: `Tuition and fees are paid at the Accounting Office during office hours (${CAMPUSES.officeHours}). Keep your official receipts.`,
     keywords: ['tuition', 'payment', 'payments', 'fee', 'fees', 'cashier', 'receipt', 'receipts', 'balance'] },
   { topic: 'Scholarships and financial aid', confirmed: false,
     answer: 'Watch the official WIT page for scholarship announcements, or ask the office handling scholarships about requirements and deadlines.',
@@ -101,4 +115,4 @@ export const FAQS = [
 ];
 
 /** Where students should confirm anything the chatbot cannot answer. */
-export const VERIFY_AT = 'the Registrar\'s Office (office hours: 9:00 AM - 12:00 NN) or the official WIT page';
+export const VERIFY_AT = `the Registrar's Office (office hours: ${CAMPUSES.officeHours}) or the official WIT page`;

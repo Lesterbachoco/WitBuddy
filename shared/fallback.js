@@ -1,13 +1,14 @@
-import { OFFICES, CAMPUSES, POLICIES, FAQS, VERIFY_AT } from './clearanceData.js';
+import { OFFICES, CAMPUSES, POLICIES, FAQS, DEPT_HEADS, VERIFY_AT } from './clearanceData.js';
 
 /** Markdown card for one clearance office (only shows facts that exist). */
 export const officeCard = (o) =>
   `### Step ${o.step}: ${o.office}\n` +
   (o.location ? `**Where:** ${o.location}\n\n` : '') +
+  (o.byProgram ? DEPT_HEADS.map((d) => `- **${d.program}:** ${d.location}`).join('\n') + '\n\n' : '') +
   `**Office hours:** ${CAMPUSES.officeHours}\n\n` +
   (o.requirements.length
     ? `**Requirements:**\n${o.requirements.map((r) => `- ${r}`).join('\n')}`
-    : '**Requirements:** none listed') +
+    : '**Requirements:** none') +
   (o.notes ? `\n\n**Note:** ${o.notes}` : '');
 
 const hoursAnswer = () =>
@@ -22,12 +23,9 @@ const mentionsOffice = (q) => OFFICES.some((o) => o.keywords.some((k) => q.inclu
  * Used when the AI API is down, rate limited, or not configured.
  * @returns {{answer: string, official: boolean}}
  */
-export function fallbackAnswer(question = '', completed = [], lastStep = 0) {
+export function fallbackAnswer(question = '') {
   const q = question.toLowerCase();
   const words = q.split(/[^a-z0-9']+/);
-  const pending = OFFICES.filter((o) => !completed.includes(o.step));
-  // Next = first uncleared office after the last one shown, wrapping around
-  const next = pending.find((o) => o.step > lastStep) || pending[0];
 
   // INC / grades policy
   const policy = POLICIES.find((p) => p.keywords.some((k) => words.includes(k)));
@@ -40,6 +38,15 @@ export function fallbackAnswer(question = '', completed = [], lastStep = 0) {
     return faq.confirmed
       ? { official: true, answer: faq.answer }
       : { official: false, answer: `**${faq.topic}**\n\n${faq.answer}\n\n*This info is not confirmed by WIT yet.*` };
+  }
+
+  // Department Head location by program ("IT" is matched in capitals only, since "it" is a common word)
+  const dept = DEPT_HEADS.find((d) => d.keywords.some(matches)) || (/\bIT\b/.test(question) ? DEPT_HEADS.find((d) => d.program.startsWith('IT')) : null);
+  if (dept && /(head|chair|dean|sign|clearance|where|office|department|dept|located|location)/.test(q)) {
+    return {
+      official: true,
+      answer: `**Department Head, ${dept.program}**\n\n**Where:** ${dept.location}\n\n**Office hours:** ${CAMPUSES.officeHours}`,
+    };
   }
 
   // Lost form: not in the knowledge base, so never claim it is official
@@ -59,16 +66,13 @@ export function fallbackAnswer(question = '', completed = [], lastStep = 0) {
     return { official: true, answer: `Start with the **${OFFICES[0].office}**.\n\n${officeCard(OFFICES[0])}` };
   }
 
-  if (/(next|what now|after this)/.test(q) && !mentionsOffice(q)) {
-    return next
-      ? { official: true, answer: `Your next office is the **${next.office}**.\n\n${officeCard(next)}` }
-      : { official: true, answer: 'All offices are marked as cleared. Your clearance signing is complete.' };
-  }
-
-  if (/\b(all|list|steps|process|offices|order|sequence)\b/.test(q) && !mentionsOffice(q)) {
+  if (/\b(all|list|steps?|process|procedure|offices|order|sequence|clearance)\b/.test(q) && !mentionsOffice(q)) {
     return {
       official: true,
-      answer: '**Clearance signing order:**\n' + OFFICES.map((o) => `${o.step}. **${o.office}**`).join('\n'),
+      answer:
+        '**Clearance signing, step by step:**\n' +
+        OFFICES.map((o) => `${o.step}. **${o.office}**${o.location ? ` (${o.location.toLowerCase().startsWith('depends') ? 'location depends on your program, just ask me' : o.location})` : ''}`).join('\n') +
+        `\n\n**Office hours:** ${CAMPUSES.officeHours}`,
     };
   }
 

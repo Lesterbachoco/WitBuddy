@@ -1,6 +1,6 @@
 /**
  * POST /api/chat  (Vercel serverless function)
- * Body: { messages: [{role:'user'|'assistant', content:string}], completed: number[] }
+ * Body: { messages: [{role:'user'|'assistant', content:string}] }
  * Returns: { answer: string, official: boolean, source: 'ai' | 'fallback' }
  *
  * The API key never leaves the server. Guardrails:
@@ -8,7 +8,7 @@
  *  - system prompt restricts answers to the knowledge base
  *  - any failure degrades to the rule-based fallback
  */
-import { OFFICES, CAMPUSES, POLICIES, FAQS, VERIFY_AT } from '../shared/clearanceData.js';
+import { OFFICES, CAMPUSES, POLICIES, FAQS, DEPT_HEADS, VERIFY_AT } from '../shared/clearanceData.js';
 import { fallbackAnswer } from '../shared/fallback.js';
 
 const MAX_HISTORY = 8;      // last N messages sent to the model
@@ -24,10 +24,10 @@ function rateLimited(ip) {
   return recent.length > RATE_LIMIT;
 }
 
-function buildSystemPrompt(completed, lastStep) {
-  const done = completed.length ? completed.join(', ') : 'none';
+function buildSystemPrompt() {
   const kb = {
     clearanceSigningOrder: OFFICES.map(({ keywords, shortName, ...o }) => o),
+    departmentHeadLocationByProgram: DEPT_HEADS.map(({ keywords, ...d }) => d),
     campuses: CAMPUSES,
     policies: POLICIES.map(({ keywords, ...p }) => p),
     schoolFaqs: FAQS.map(({ keywords, ...f }) => f),
@@ -38,12 +38,10 @@ WIT KNOWLEDGE BASE (the only source of official WIT facts):
 ${JSON.stringify(kb, null, 2)}
 A missing value (for example a null location or an empty requirements list) means the information is not available.
 
-STUDENT PROGRESS: clearance steps already cleared = [${done}]. Last office shown to the student = step ${lastStep || 'none'}.
-When asked "what's next", name the first step NOT cleared that comes after the last office shown; if there is none, wrap to the lowest uncleared step; if every step is cleared, say clearance signing is complete.
-
 RULES
-1. For WIT facts (offices, order, hours, campuses, policies, fees), use only the knowledge base. Never invent rooms, locations, requirements, schedules, fees, names, phone numbers or policies. If a clearance office has no requirements listed, say none are listed.
+1. For WIT facts (offices, order, hours, campuses, policies, fees), use only the knowledge base. Never invent rooms, locations, requirements, schedules, fees, names, phone numbers or policies. If a clearance office has an empty requirements list, say there are no requirements.
 1b. Entries in schoolFaqs with confirmed:false are placeholder info WIT has not verified. You may use them, but say clearly that the information is not confirmed yet, tell the student to verify at ${VERIFY_AT}, and use type "verify".
+1c. Only bring up clearance offices when the student asks about clearance (e.g. "who signs first", "step by step"). Do not mention them in unrelated chat. When asked for the step-by-step process, list the four steps in order with each location. For the Department Head, the location depends on the program: if you do not know the student's program, ask which one; if you know it, give that program's location from departmentHeadLocationByProgram.
 2. If a WIT-specific question is not covered by the knowledge base (e.g. a lost clearance form, deadlines, room numbers), say you are not sure and tell the student to verify at ${VERIFY_AT}. Use type "verify".
 3. For general questions (study help, writing, general knowledge, advice), answer helpfully from general knowledge. Use type "general".
 4. Do not help with anything harmful, illegal or unsafe, or with cheating on exams. Decline briefly and kindly.
@@ -135,17 +133,12 @@ export default async function handler(req, res) {
   if (!last || last.role !== 'user' || !last.content.trim()) {
     return res.status(400).json({ error: 'Send a question.' });
   }
-  const completed = (Array.isArray(body.completed) ? body.completed : [])
-    .filter((n) => Number.isInteger(n) && n >= 1 && n <= OFFICES.length);
-
-  const lastStep = Number.isInteger(body.lastStep) && body.lastStep >= 0 && body.lastStep <= OFFICES.length ? body.lastStep : 0;
-
   // ---- Ask the model, fall back on any problem ----
   try {
     const provider = process.env.GEMINI_API_KEY ? callGemini : process.env.GROQ_API_KEY ? callGroq : null;
     if (!provider) throw new Error('No API key configured');
 
-    const raw = await provider(buildSystemPrompt(completed, lastStep), messages);
+    const raw = await provider(buildSystemPrompt(), messages);
     const parsed = JSON.parse(String(raw).replace(/```json|```/g, '').trim());
     if (typeof parsed.answer !== 'string' || !parsed.answer.trim()) throw new Error('Bad model output');
 
@@ -158,6 +151,6 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error('Chat fallback:', err.message);
-    return res.status(200).json({ ...fallbackAnswer(last.content, completed, lastStep), source: 'fallback', reason: String(err.message).slice(0, 300) }); // reason holds no secrets
+    return res.status(200).json({ ...fallbackAnswer(last.content), source: 'fallback', reason: String(err.message).slice(0, 300) }); // reason holds no secrets
   }
 }
