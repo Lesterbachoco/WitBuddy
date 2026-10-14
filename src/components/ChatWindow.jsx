@@ -3,7 +3,6 @@ import ReactMarkdown from 'react-markdown';
 import { Check, Info, Send, ShieldCheck, TriangleAlert, WifiOff } from 'lucide-react';
 import { OFFICES, VERIFY_AT } from '../../shared/clearanceData.js';
 
-const SHORT_NAMES = ['Library', 'Department', 'Accounting', 'Guidance', 'OSA', 'Registrar'];
 
 /** Trust badge shown under assistant answers. */
 function TrustBadge({ official, general, source }) {
@@ -84,10 +83,12 @@ export default function ChatWindow({ messages, loading, onSend, onNext, complete
       {/* Quick actions */}
       <div className="flex gap-2 overflow-x-auto border-t border-line bg-white px-3 py-2">
         <button onClick={onNext} className="shrink-0 rounded-full bg-next px-3 py-1.5 text-sm font-semibold">Next office</button>
-        {OFFICES.map((o, i) => (
-          <button key={o.step} onClick={() => submit(`Where is the ${o.office} and what do I bring?`)}
+        <button onClick={() => submit('What are the campus and office hours?')} className="shrink-0 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-mist">Hours</button>
+        <button onClick={() => submit('What if I have an INC or missing grades?')} className="shrink-0 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-mist">INC / grades</button>
+        {OFFICES.map((o) => (
+          <button key={o.step} onClick={() => submit(`Tell me about the ${o.office}`)}
             className="shrink-0 rounded-full border border-line px-3 py-1.5 text-sm hover:bg-mist">
-            {SHORT_NAMES[i] ?? o.office}
+            {o.shortName ?? o.office}
           </button>
         ))}
       </div>
@@ -95,7 +96,7 @@ export default function ChatWindow({ messages, loading, onSend, onNext, complete
       <form onSubmit={(e) => { e.preventDefault(); submit(input); }} className="flex gap-2 border-t border-line bg-white p-3">
         <input
           value={input} onChange={(e) => setInput(e.target.value)} maxLength={500}
-          placeholder="Ask about clearance or anything else…" aria-label="Your question"
+          placeholder="Ask me anything…" aria-label="Your question"
           className="min-w-0 flex-1 rounded-full border border-line bg-mist px-4 py-2.5 text-[15px]"
         />
         <button type="submit" disabled={!input.trim() || loading} aria-label="Send"

@@ -11,7 +11,7 @@ const WELCOME = {
   id: 'welcome',
   role: 'assistant',
   content:
-    "Hi, I'm **WitBuddy**. I can tell you which clearance office to visit next, where it is, and what to bring.\n\nTry: *\"Who signs my clearance first?\"* or tap an office below. You can ask me other questions too.",
+    "Hi, I'm **WitBuddy**. Ask me anything: school life, study help, campus and office hours, or your clearance signing.\n\nTry: *\"Who signs my clearance first?\"* or *\"What time do offices open?\"*",
 };
 
 export default function App() {
@@ -76,10 +76,10 @@ export default function App() {
         </button>
         <GraduationCap size={24} aria-hidden />
         <div>
-          <h1 className="font-display text-lg font-bold leading-tight">WitBuddy Clearance</h1>
+          <h1 className="font-display text-lg font-bold leading-tight">WitBuddy</h1>
           <p className="text-xs text-slate-300">Western Institute of Technology</p>
         </div>
-        <p className="ml-auto text-sm font-semibold">{completed.length}/{OFFICES.length} cleared</p>
+        <p className="ml-auto text-sm font-semibold">{OFFICES.filter((o) => completed.includes(o.step)).length}/{OFFICES.length} cleared</p>
       </header>
 
       <div className="relative flex min-h-0 flex-1">
