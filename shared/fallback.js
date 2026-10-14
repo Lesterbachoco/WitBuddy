@@ -1,4 +1,4 @@
-import { OFFICES, CAMPUSES, POLICIES, FAQS, DEPT_HEADS, VERIFY_AT } from './clearanceData.js';
+import { OFFICES, CAMPUSES, POLICIES, FAQS, DEPT_HEADS, PROGRAMS, VERIFY_AT } from './clearanceData.js';
 
 /** Markdown card for one clearance office (only shows facts that exist). */
 export const officeCard = (o) =>
@@ -12,7 +12,7 @@ export const officeCard = (o) =>
   (o.notes ? `\n\n**Note:** ${o.notes}` : '');
 
 const hoursAnswer = () =>
-  `**Campuses:** ${CAMPUSES.sites.join(' and ')}\n\n` +
+  `**Campuses:** ${CAMPUSES.sites.join(', ')}\n\n` +
   `- **Campus open:** ${CAMPUSES.campusHours}\n` +
   `- **Office hours:** ${CAMPUSES.officeHours} (${CAMPUSES.officeHoursApplyTo})`;
 
@@ -41,12 +41,16 @@ export function fallbackAnswer(question = '') {
   }
 
   // Department Head location by program ("IT" is matched in capitals only, since "it" is a common word)
-  const dept = DEPT_HEADS.find((d) => d.keywords.some(matches)) || (/\bIT\b/.test(question) ? DEPT_HEADS.find((d) => d.program.startsWith('IT')) : null);
+  const dept = DEPT_HEADS.find((d) => d.keywords.some(matches)) || (/\bIT\b/.test(question) ? DEPT_HEADS.find((d) => d.program.includes('Information Technology')) : null);
   if (dept && /(head|chair|dean|sign|clearance|where|office|department|dept|located|location)/.test(q)) {
-    return {
-      official: true,
-      answer: `**Department Head, ${dept.program}**\n\n**Where:** ${dept.location}\n\n**Office hours:** ${CAMPUSES.officeHours}`,
-    };
+    return dept.location
+      ? { official: true, answer: `**Department Head, ${dept.program}**\n\n**Where:** ${dept.location}\n\n**Office hours:** ${CAMPUSES.officeHours}` }
+      : { official: false, answer: `**Department Head, ${dept.program}**\n\nI don't have the office location for this program yet.\n\n**Where to verify:** ${VERIFY_AT}.` };
+  }
+
+  // Programs offered
+  if (/\b(programs?|courses?|degrees?|offered|offer|offers)\b/.test(q)) {
+    return { official: true, answer: '**Programs offered at WIT:**\n' + PROGRAMS.map((x) => `- ${x}`).join('\n') };
   }
 
   // Lost form: not in the knowledge base, so never claim it is official

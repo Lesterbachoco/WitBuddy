@@ -8,7 +8,7 @@
  *  - system prompt restricts answers to the knowledge base
  *  - any failure degrades to the rule-based fallback
  */
-import { OFFICES, CAMPUSES, POLICIES, FAQS, DEPT_HEADS, VERIFY_AT } from '../shared/clearanceData.js';
+import { OFFICES, CAMPUSES, POLICIES, FAQS, DEPT_HEADS, PROGRAMS, VERIFY_AT } from '../shared/clearanceData.js';
 import { fallbackAnswer } from '../shared/fallback.js';
 
 const MAX_HISTORY = 8;      // last N messages sent to the model
@@ -28,6 +28,7 @@ function buildSystemPrompt() {
   const kb = {
     clearanceSigningOrder: OFFICES.map(({ keywords, shortName, ...o }) => o),
     departmentHeadLocationByProgram: DEPT_HEADS.map(({ keywords, ...d }) => d),
+    officialProgramsOffered: PROGRAMS,
     campuses: CAMPUSES,
     policies: POLICIES.map(({ keywords, ...p }) => p),
     schoolFaqs: FAQS.map(({ keywords, ...f }) => f),

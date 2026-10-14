@@ -48,23 +48,46 @@ export const OFFICES = [
   },
 ];
 
+// Official programs offered by WIT
+export const PROGRAMS = [
+  'AB English Language (ABEL)',
+  'AB Political Science (ABPS)',
+  'BS Biology (Microbiology)',
+  'BS Hospitality Management (HRM) (BSHM)',
+  'BS Accountancy',
+  'BS Business Administration (BSBA), majors in Financial Management and Marketing Management',
+  'BS Civil Engineering',
+  'BS Computer Engineering',
+  'BS Electrical Engineering',
+  'BS Information Technology',
+  'BS Mechanical Engineering',
+  'BS Marine Engineering',
+];
+
 // Department Head location depends on the student's program.
-// Order matters for the offline matcher: more specific programs come first.
+// `location: null` = not provided yet (the bot says so instead of guessing).
+// Order matters for the offline matcher: more specific entries come first.
+const ENG = 'Engineering Building (RTS)';
 export const DEPT_HEADS = [
-  { program: 'Marine Engineering', location: 'Marine Building - 1st Floor', keywords: ['marine engineering', 'marine eng', 'marine'] },
-  { program: 'Engineering', location: 'Engineering Building - 1st Floor', keywords: ['engineering', 'engineer', 'engg'] },
-  { program: 'IT (Information Technology)', location: 'RTS IT Building - 3rd Floor', keywords: ['information technology', 'bsit', 'it program'] },
-  { program: 'HM (Hospitality Management)', location: 'Main Building - 3rd Floor', keywords: ['hm', 'hrm', 'hospitality'] },
-  { program: 'Accountancy', location: 'Main Building - 3rd Floor', keywords: ['accountancy', 'accounting', 'bsa'] },
-  { program: 'Biochemistry', location: 'Main Building - 3rd Floor', keywords: ['biochem', 'biochemistry'] },
-  { program: 'AB English Language', location: 'Main Building - 3rd Floor', keywords: ['english'] },
-  { program: 'AB Political Science', location: 'Main Building - 3rd Floor', keywords: ['political science', 'polsci', 'political'] },
+  { program: 'BS Marine Engineering', location: ENG, keywords: ['marine engineering', 'marine eng', 'marine'] },
+  { program: 'BS Civil Engineering', location: ENG, keywords: ['civil engineering', 'civil', 'bsce'] },
+  { program: 'BS Computer Engineering', location: ENG, keywords: ['computer engineering', 'bscpe', 'cpe'] },
+  { program: 'BS Electrical Engineering', location: ENG, keywords: ['electrical engineering', 'electrical', 'bsee'] },
+  { program: 'BS Mechanical Engineering', location: ENG, keywords: ['mechanical engineering', 'mechanical', 'bsme'] },
+  { program: 'Engineering programs (Civil, Computer, Electrical, Mechanical, Marine)', location: ENG, keywords: ['engineering', 'engineer'] },
+  { program: 'BS Information Technology', location: 'IT Building (RTS) - 3rd Floor', keywords: ['information technology', 'bsit', 'it program'] },
+  { program: 'AB English Language (ABEL)', location: 'Main Building - 2nd Floor', keywords: ['abel', 'english'] },
+  { program: 'AB Political Science (ABPS)', location: 'Main Building - 2nd Floor', keywords: ['abps', 'political science', 'polsci', 'political'] },
+  { program: 'BS Hospitality Management (BSHM)', location: 'Science Building', keywords: ['bshm', 'hm', 'hrm', 'hospitality'] },
+  { program: 'BS Business Administration (BSBA)', location: 'Main Building - 3rd Floor', keywords: ['bsba', 'bsbm', 'business', 'financial management', 'marketing management', 'marketing'] },
+  { program: 'BS Accountancy', location: 'Main Building - 3rd Floor', keywords: ['accountancy', 'bsa'] },
+  { program: 'BS Biology (Microbiology)', location: null, keywords: ['biology', 'microbiology', 'biochem', 'biochemistry'] },
 ];
 
 // Campuses and hours
 export const CAMPUSES = {
-  sites: ['RTS Campus', 'Main Campus'],
-  campusHours: '6:30 AM - 10:00 PM (both campuses)',
+  sites: ['Main Campus', 'Science Building', 'RTS Campus'],
+  campusHours: '6:30 AM - 10:00 PM (Main Campus and RTS Campus; Science Building hours not yet confirmed)',
   officeHours: '9:00 AM - 12:00 PM and 1:00 PM - 4:00 PM',
   officeHoursApplyTo: 'all offices, including the Registrar and the Accounting Office',
 };
